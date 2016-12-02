@@ -3,15 +3,16 @@ module Main exposing (..)
 import Ui.ColorPicker
 import Ext.Color exposing (Hsv, hsvToRgb)
 import Config exposing (websocketUrl)
+import Ui
 import Ui.App
+import Ui.Container
+import Ui.Button
 import Color exposing (Color, black, red, blue, white, hsla)
 import Collage exposing (..)
 import Element exposing (..)
 import Html exposing (Html, div, text, button, br)
 import Html.Attributes exposing (..)
-import Html.Events exposing (onClick)
 import Mouse exposing (..)
-import MouseUtils exposing (MousePosition)
 import WebSocket
 import Task
 import Json.Decode exposing (decodeString, map)
@@ -53,7 +54,7 @@ initialModel =
     , isDrawing = False
     , x = 0
     , y = 0
-    , windowWidth = 300
+    , windowWidth = 600
     , windowHeight = 300
     , selectedColor = Color.black
     , colorPicker = Ui.ColorPicker.init Color.black
@@ -133,31 +134,45 @@ view model =
     Ui.App.view
         App
         model.app
-        [ let
-            background =
-                rect (toFloat model.windowWidth) (toFloat model.windowHeight)
-                    |> filled white
-
-            createdLines =
-                (drawLines model.lines)
-
-            allElements =
-                (List.append (background :: [ drawLine model.currentLine ]) createdLines)
-          in
-            div []
-                [ div [ Html.Attributes.style [ ( "margin", "20" ), ( "border-style", "solid" ), ( "display", "inline-block" ) ], VirtualDom.onWithOptions "mousemove" options (Json.Decode.map MouseMsg offsetPosition) ]
-                    [ collage
-                        model.windowWidth
-                        model.windowHeight
-                        allElements
-                        |> Element.toHtml
+        [ Ui.Container.column
+            []
+            [ Ui.title [] [ Html.text "Elm-UI Paint Online" ]
+            , Ui.textBlock "This is simple paint online integrated with Elm-UI library."
+            , Ui.Container.row
+                []
+                [ createCollage model
+                , Ui.Container.column
+                    []
+                    [ Html.map ColorPicker (Ui.ColorPicker.view model.colorPicker)
+                    , Ui.Button.primary "Clear collage" ClearCollage
                     ]
-                , br [] []
-                , button [ onClick (ClearCollage) ] [ Html.text "clear" ]
-                , br [] []
-                , Html.map ColorPicker (Ui.ColorPicker.view model.colorPicker)
                 ]
+            ]
         ]
+
+
+createCollage : Model -> Html Msg
+createCollage model =
+    let
+        background =
+            rect (toFloat model.windowWidth) (toFloat model.windowHeight)
+                |> filled white
+
+        createdLines =
+            (drawLines model.lines)
+
+        allElements =
+            (List.append (background :: [ drawLine model.currentLine ]) createdLines)
+    in
+        div []
+            [ div [ Html.Attributes.style [ ( "margin", "20" ), ( "border-style", "solid" ), ( "display", "inline-block" ) ], VirtualDom.onWithOptions "mousemove" options (Json.Decode.map MouseMsg offsetPosition) ]
+                [ collage
+                    model.windowWidth
+                    model.windowHeight
+                    allElements
+                    |> Element.toHtml
+                ]
+            ]
 
 
 subscriptions : Model -> Sub Msg
