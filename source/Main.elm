@@ -11,10 +11,12 @@ import Html exposing (Html, div, text, button, br)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onClick)
 import Mouse exposing (..)
+import MouseUtils exposing (MousePosition)
 import WebSocket
 import Task
-import Json.Decode exposing (decodeString)
+import Json.Decode exposing (decodeString, map)
 import Line exposing (Line, encodedLine, linesDecoder)
+import VirtualDom
 
 
 type alias Model =
@@ -143,7 +145,7 @@ view model =
                 (List.append (background :: [ drawLine model.currentLine ]) createdLines)
           in
             div []
-                [ div [ Html.Attributes.style [ ( "border-style", "solid" ), ( "display", "inline-block" ) ] ]
+                [ div [ Html.Attributes.style [ ( "margin", "20" ), ( "border-style", "solid" ), ( "display", "inline-block" ) ], VirtualDom.onWithOptions "mousemove" options (Json.Decode.map MouseMsg offsetPosition) ]
                     [ collage
                         model.windowWidth
                         model.windowHeight
@@ -162,7 +164,6 @@ subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.batch
         [ Mouse.downs DrawStart
-        , Mouse.moves MouseMsg
         , Mouse.ups DrawStop
         , WebSocket.listen websocketUrl NewMessage
         , Sub.map ColorPicker (Ui.ColorPicker.subscriptions model.colorPicker)
@@ -223,7 +224,7 @@ drawLines lines =
 drawLine : Line -> Form
 drawLine line =
     let
-        intsToFloats : { x : Int, y : Int } -> ( Float, Float )
+        intsToFloats : Mouse.Position -> ( Float, Float )
         intsToFloats p =
             ( toFloat p.x, toFloat p.y )
 
@@ -232,3 +233,12 @@ drawLine line =
     in
         shape
             |> traced (solid line.lineColor)
+
+
+options =
+    { preventDefault = True, stopPropagation = True }
+
+
+offsetPosition : Json.Decode.Decoder Mouse.Position
+offsetPosition =
+    Json.Decode.map2 Position (Json.Decode.field "offsetX" Json.Decode.int) (Json.Decode.field "offsetY" Json.Decode.int)
