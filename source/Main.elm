@@ -1,10 +1,10 @@
 module Main exposing (..)
 
-import Ui.Container
-import Ui.Button
+import Ui.ColorPicker
+import Ext.Color exposing (Hsv, hsvToRgb)
 import Ui.App
 import Ui
-import Color exposing (Color, black, red, blue, white)
+import Color exposing (Color, black, red, blue, white, hsla)
 import Collage exposing (..)
 import Element exposing (..)
 import Html exposing (Html, div, text, button, br)
@@ -27,6 +27,7 @@ type alias Model =
     , windowWidth : Int
     , windowHeight : Int
     , selectedColor : Color
+    , colorPicker : Ui.ColorPicker.Model
     }
 
 
@@ -35,11 +36,11 @@ type Msg
     | DrawStart Mouse.Position
     | DrawStop Mouse.Position
     | MouseMsg Mouse.Position
-    | ChangeColor Color
     | ClearCollage
     | NewMessage String
     | SendNewLine
     | SendClear
+    | ColorPicker Ui.ColorPicker.Msg
 
 
 websocketUrl : String
@@ -58,6 +59,7 @@ initialModel =
     , windowWidth = 300
     , windowHeight = 300
     , selectedColor = Color.black
+    , colorPicker = Ui.ColorPicker.init Color.black
     }
 
 
@@ -79,9 +81,6 @@ update msg model =
 
         MouseMsg position ->
             isDrawing position model ! []
-
-        ChangeColor col ->
-            { model | selectedColor = col } ! []
 
         ClearCollage ->
             model ! [ msgToCmd SendClear ]
@@ -118,42 +117,49 @@ update msg model =
                         model
                         ! []
 
+        ColorPicker act ->
+            let
+                ( colorPicker, effect ) =
+                    Ui.ColorPicker.update act model.colorPicker
+
+                { saturation, alpha, hue, value } =
+                    colorPicker.colorPanel.value
+
+                pickedColor =
+                    hsvToRgb (Hsv saturation value alpha hue)
+            in
+                ( { model | colorPicker = colorPicker, selectedColor = pickedColor }, Cmd.map ColorPicker effect )
+
 
 view : Model -> Html.Html Msg
 view model =
     Ui.App.view
         App
         model.app
-        [ Ui.Container.column
-            []
-            [ Ui.title [] [ Html.text "TEST" ]
-            , Ui.textBlock "This is an minimal project to get you started with Elm-UI!"
-            , let
-                background =
-                    rect (toFloat model.windowWidth) (toFloat model.windowHeight)
-                        |> filled white
+        [ let
+            background =
+                rect (toFloat model.windowWidth) (toFloat model.windowHeight)
+                    |> filled white
 
-                createdLines =
-                    (drawLines model.lines)
+            createdLines =
+                (drawLines model.lines)
 
-                allElements =
-                    (List.append (background :: [ drawLine model.currentLine ]) createdLines)
-              in
-                div []
-                    [ div [ Html.Attributes.style [ ( "border-style", "solid" ), ( "display", "inline-block" ) ] ]
-                        [ collage
-                            model.windowWidth
-                            model.windowHeight
-                            allElements
-                            |> Element.toHtml
-                        ]
-                    , br [] []
-                    , button [ onClick (ChangeColor red) ] [ Html.text "red" ]
-                    , button [ onClick (ChangeColor blue) ] [ Html.text "blue" ]
-                    , button [ onClick (ChangeColor black) ] [ Html.text "black" ]
-                    , button [ onClick (ClearCollage) ] [ Html.text "clear" ]
+            allElements =
+                (List.append (background :: [ drawLine model.currentLine ]) createdLines)
+          in
+            div []
+                [ div [ Html.Attributes.style [ ( "border-style", "solid" ), ( "display", "inline-block" ) ] ]
+                    [ collage
+                        model.windowWidth
+                        model.windowHeight
+                        allElements
+                        |> Element.toHtml
                     ]
-            ]
+                , br [] []
+                , button [ onClick (ClearCollage) ] [ Html.text "clear" ]
+                , br [] []
+                , Html.map ColorPicker (Ui.ColorPicker.view model.colorPicker)
+                ]
         ]
 
 
@@ -164,6 +170,7 @@ subscriptions model =
         , Mouse.moves MouseMsg
         , Mouse.ups DrawStop
         , WebSocket.listen websocketUrl NewMessage
+        , Sub.map ColorPicker (Ui.ColorPicker.subscriptions model.colorPicker)
         ]
 
 
