@@ -1,6 +1,6 @@
 module Main exposing (..)
 
-import Ui.ColorPicker
+import Ui.ColorPanel
 import Ext.Color exposing (Hsv, hsvToRgb)
 import Config exposing (websocketUrl)
 import Ui
@@ -30,7 +30,7 @@ type alias Model =
     , windowWidth : Int
     , windowHeight : Int
     , selectedColor : Color
-    , colorPicker : Ui.ColorPicker.Model
+    , colorPanel : Ui.ColorPanel.Model
     }
 
 
@@ -43,7 +43,7 @@ type Msg
     | NewMessage String
     | SendNewLine
     | SendClear
-    | ColorPicker Ui.ColorPicker.Msg
+    | ColorPanel Ui.ColorPanel.Msg
 
 
 initialModel : Model
@@ -57,7 +57,7 @@ initialModel =
     , windowWidth = 600
     , windowHeight = 300
     , selectedColor = Color.black
-    , colorPicker = Ui.ColorPicker.init Color.black
+    , colorPanel = Ui.ColorPanel.init Color.black
     }
 
 
@@ -115,18 +115,18 @@ update msg model =
                         model
                         ! []
 
-        ColorPicker act ->
+        ColorPanel act ->
             let
-                ( colorPicker, effect ) =
-                    Ui.ColorPicker.update act model.colorPicker
+                ( colorPanel, effect ) =
+                    Ui.ColorPanel.update act model.colorPanel
 
                 { saturation, alpha, hue, value } =
-                    colorPicker.colorPanel.value
+                    colorPanel.value
 
                 pickedColor =
                     hsvToRgb (Hsv saturation value alpha hue)
             in
-                ( { model | colorPicker = colorPicker, selectedColor = pickedColor }, Cmd.map ColorPicker effect )
+                ( { model | colorPanel = colorPanel, selectedColor = pickedColor }, Cmd.map ColorPanel effect )
 
 
 view : Model -> Html.Html Msg
@@ -143,7 +143,7 @@ view model =
                 [ createCollage model
                 , Ui.Container.column
                     []
-                    [ Html.map ColorPicker (Ui.ColorPicker.view model.colorPicker)
+                    [ Html.map ColorPanel (Ui.ColorPanel.view model.colorPanel)
                     , Ui.Button.primary "Clear collage" ClearCollage
                     ]
                 ]
@@ -181,7 +181,7 @@ subscriptions model =
         [ Mouse.downs DrawStart
         , Mouse.ups DrawStop
         , WebSocket.listen websocketUrl NewMessage
-        , Sub.map ColorPicker (Ui.ColorPicker.subscriptions model.colorPicker)
+        , Sub.map ColorPanel (Ui.ColorPanel.subscriptions model.colorPanel)
         ]
 
 
