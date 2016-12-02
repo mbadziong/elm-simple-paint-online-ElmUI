@@ -1,16 +1,11 @@
 module Line exposing (Line, encodedLine, linesDecoder)
 
 import Color exposing (Color)
+import Point exposing (Point)
 import ColorUtils exposing (colorToString, colorDecoder)
 import Json.Encode exposing (list, string, object, encode, int)
 import Json.Decode exposing (map2, field, Decoder, andThen)
-import TupleUtils exposing (pointEncoder, pointDecoder)
-
-
-type alias Point =
-    { x : Int
-    , y : Int
-    }
+import Point exposing (pointEncoder, pointDecoder)
 
 
 type alias Line =

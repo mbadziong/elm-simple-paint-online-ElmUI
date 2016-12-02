@@ -2,8 +2,8 @@ module Main exposing (..)
 
 import Ui.ColorPicker
 import Ext.Color exposing (Hsv, hsvToRgb)
+import Config exposing (websocketUrl)
 import Ui.App
-import Ui
 import Color exposing (Color, black, red, blue, white, hsla)
 import Collage exposing (..)
 import Element exposing (..)
@@ -41,11 +41,6 @@ type Msg
     | SendNewLine
     | SendClear
     | ColorPicker Ui.ColorPicker.Msg
-
-
-websocketUrl : String
-websocketUrl =
-    "ws://localhost:1234/test"
 
 
 initialModel : Model
@@ -174,6 +169,7 @@ subscriptions model =
         ]
 
 
+main : Program Never Model Msg
 main =
     Html.program
         { init = initialModel ! []

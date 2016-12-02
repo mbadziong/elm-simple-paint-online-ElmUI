@@ -1,4 +1,4 @@
-module TupleUtils exposing (pointEncoder, pointDecoder)
+module Point exposing (Point, pointEncoder, pointDecoder)
 
 import Json.Encode as JE exposing (object, int)
 import Json.Decode as DE exposing (Decoder, map2, int, field)
@@ -8,6 +8,7 @@ type alias Point =
     { x : Int, y : Int }
 
 
+pointToObject : Point -> JE.Value
 pointToObject point =
     object
         [ ( "x", JE.int point.x )
@@ -15,6 +16,7 @@ pointToObject point =
         ]
 
 
+pointEncoder : Point -> JE.Value
 pointEncoder point =
     pointToObject point
 
