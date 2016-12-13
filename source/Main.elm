@@ -151,6 +151,11 @@ view model =
         ]
 
 
+collageStyles : Html.Attribute Msg
+collageStyles =
+    Html.Attributes.style [ ( "margin", "20" ), ( "border-style", "solid" ), ( "display", "inline-block" ) ]
+
+
 createCollage : Model -> Html Msg
 createCollage model =
     let
@@ -165,7 +170,7 @@ createCollage model =
             (List.append (background :: [ drawLine model.currentLine ]) createdLines)
     in
         div []
-            [ div [ Html.Attributes.style [ ( "margin", "20" ), ( "border-style", "solid" ), ( "display", "inline-block" ) ], VirtualDom.onWithOptions "mousemove" options (Json.Decode.map MouseMsg offsetPosition) ]
+            [ div [ collageStyles, VirtualDom.onWithOptions "mousemove" options (Json.Decode.map MouseMsg offsetPosition) ]
                 [ collage
                     model.windowWidth
                     model.windowHeight
