@@ -27,6 +27,7 @@ type alias Model =
     , isDrawing : Bool
     , x : Int
     , y : Int
+    , selectedWidth: Int
     , windowWidth : Int
     , windowHeight : Int
     , selectedColor : Color
@@ -50,10 +51,11 @@ initialModel : Model
 initialModel =
     { app = Ui.App.init
     , lines = []
-    , currentLine = Line [] Color.black
+    , currentLine = Line [] Color.black 1
     , isDrawing = False
     , x = 0
     , y = 0
+    , selectedWidth = 1
     , windowWidth = 600
     , windowHeight = 300
     , selectedColor = Color.black
@@ -72,7 +74,7 @@ update msg model =
                 ( { model | app = app }, Cmd.map App effect )
 
         DrawStart _ ->
-            { model | isDrawing = True, currentLine = (Line [] model.selectedColor) } ! []
+            { model | isDrawing = True, currentLine = (Line [] model.selectedColor 1) } ! []
 
         DrawStop _ ->
             saveLine model ! [ msgToCmd SendNewLine ]
@@ -95,7 +97,7 @@ update msg model =
                 latestLine =
                     case List.head model.lines of
                         Nothing ->
-                            Line [] black
+                            Line [] black 1
 
                         Just val ->
                             val
@@ -250,9 +252,11 @@ drawLine line =
 
         shape =
             path (List.map intsToFloats line.points)
+        lineStyle = solid line.lineColor
+        expectedLineStyle = {lineStyle | width = toFloat line.width}
     in
         shape
-            |> traced (solid line.lineColor)
+            |> traced expectedLineStyle
 
 
 options =
