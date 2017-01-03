@@ -7,7 +7,7 @@ import Color.Convert exposing (colorToHex, hexToColor)
 
 colorToString : Color -> String
 colorToString color =
-    colorToHex (color)
+    colorToHex color
 
 
 stringToColorDecoder : String -> Decoder Color

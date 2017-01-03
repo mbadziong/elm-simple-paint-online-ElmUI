@@ -255,6 +255,7 @@ drawLine line =
             |> traced (solid line.lineColor)
 
 
+options : { preventDefault : Bool, stopPropagation : Bool }
 options =
     { preventDefault = True, stopPropagation = True }
 
