@@ -7,6 +7,7 @@ import Ui
 import Ui.App
 import Ui.Container
 import Ui.Button
+import Ui.Slider
 import Color exposing (Color, black, red, blue, white, hsla)
 import Collage exposing (..)
 import Element exposing (..)
@@ -22,6 +23,7 @@ import VirtualDom
 
 type alias Model =
     { app : Ui.App.Model
+    , slider : Ui.Slider.Model
     , lines : List Line
     , currentLine : Line
     , isDrawing : Bool
@@ -36,6 +38,7 @@ type alias Model =
 
 type Msg
     = App Ui.App.Msg
+    | Slider Ui.Slider.Msg
     | DrawStart Mouse.Position
     | DrawStop Mouse.Position
     | MouseMsg Mouse.Position
@@ -49,8 +52,9 @@ type Msg
 initialModel : Model
 initialModel =
     { app = Ui.App.init
+    , slider = Ui.Slider.init 2
     , lines = []
-    , currentLine = Line [] Color.black
+    , currentLine = Line [] Color.black 1
     , isDrawing = False
     , x = 0
     , y = 0
@@ -71,8 +75,15 @@ update msg model =
             in
                 ( { model | app = app }, Cmd.map App effect )
 
+        Slider act ->
+            let
+                ( slider, effect ) =
+                    Ui.Slider.update act model.slider
+            in
+                ( { model | slider = slider }, Cmd.map Slider effect )
+
         DrawStart _ ->
-            { model | isDrawing = True, currentLine = (Line [] model.selectedColor) } ! []
+            { model | isDrawing = True, currentLine = (Line [] model.selectedColor (floor model.slider.value // 10)) } ! []
 
         DrawStop _ ->
             saveLine model ! [ msgToCmd SendNewLine ]
@@ -95,7 +106,7 @@ update msg model =
                 latestLine =
                     case List.head model.lines of
                         Nothing ->
-                            Line [] black
+                            Line [] black 1
 
                         Just val ->
                             val
@@ -143,7 +154,9 @@ view model =
                 [ createCollage model
                 , Ui.Container.column
                     []
-                    [ Html.map ColorPanel (Ui.ColorPanel.view model.colorPanel)
+                    [ Ui.textBlock ("Line width: " ++ toString (floor model.slider.value // 10))
+                    , Html.map Slider (Ui.Slider.view model.slider)
+                    , Html.map ColorPanel (Ui.ColorPanel.view model.colorPanel)
                     , Ui.Button.primary "Clear collage" ClearCollage
                     ]
                 ]
@@ -187,6 +200,7 @@ subscriptions model =
         , Mouse.ups DrawStop
         , WebSocket.listen websocketUrl NewMessage
         , Sub.map ColorPanel (Ui.ColorPanel.subscriptions model.colorPanel)
+        , Sub.map Slider (Ui.Slider.subscriptions model.slider)
         ]
 
 
@@ -250,9 +264,11 @@ drawLine line =
 
         shape =
             path (List.map intsToFloats line.points)
+        lineStyle = solid line.lineColor
+        expectedLineStyle = {lineStyle | width = toFloat line.width}
     in
         shape
-            |> traced (solid line.lineColor)
+            |> traced expectedLineStyle
 
 
 options : { preventDefault : Bool, stopPropagation : Bool }
