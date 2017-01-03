@@ -2,7 +2,7 @@ module Line exposing (Line, encodedLine, linesDecoder)
 
 import Color exposing (Color)
 import Point exposing (Point)
-import ColorUtils exposing (colorToString, colorDecoder)
+import ColorUtils exposing (colorEncoder, colorDecoder, Rgba)
 import Json.Encode exposing (list, string, object, encode, int)
 import Json.Decode exposing (map2, field, Decoder, andThen)
 import Point exposing (pointEncoder, pointDecoder)
@@ -16,7 +16,7 @@ type alias Line =
 
 type alias EncodedLine =
     { points : List Point
-    , lineColor : String
+    , lineColor : Rgba
     }
 
 
@@ -24,7 +24,7 @@ encodedLine : Line -> String
 encodedLine line =
     let
         lineColor =
-            colorToString line.lineColor
+            colorEncoder line.lineColor
 
         points =
             line.points

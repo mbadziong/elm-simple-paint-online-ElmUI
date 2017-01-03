@@ -1,25 +1,59 @@
-module ColorUtils exposing (colorToString, colorDecoder)
+module ColorUtils exposing (colorEncoder, colorDecoder, Rgba)
 
-import Json.Decode exposing (Decoder, decodeString, list, string, andThen, succeed, fail)
-import Color exposing (Color, black, red, blue)
-import Color.Convert exposing (colorToHex, hexToColor)
+import Json.Decode as DE exposing (Decoder, decodeString, list, string, andThen, succeed, map4, field, int, float)
+import Json.Encode as JE exposing (encode, object, int, float)
+import Color exposing (rgba, Color, toRgb)
 
 
-colorToString : Color -> String
-colorToString color =
-    colorToHex color
+type alias Rgba =
+    { red : Int
+    , green : Int
+    , blue : Int
+    , alpha : Float
+    }
+
+
+colorEncoder : Color -> String
+colorEncoder color =
+    encodeRgba <| colorToRgba color
+
+
+colorToRgba : Color -> Rgba
+colorToRgba color =
+    toRgb color
+
+
+encodeRgba : Rgba -> String
+encodeRgba rgba =
+    encode 0 <|
+        object
+            [ ( "red", JE.int rgba.red )
+            , ( "green", JE.int rgba.green )
+            , ( "blue", JE.int rgba.blue )
+            , ( "alpha", JE.float rgba.alpha )
+            ]
+
+
+rgbaDecoder : Decoder Rgba
+rgbaDecoder =
+    map4 Rgba
+        (field "red" DE.int)
+        (field "green" DE.int)
+        (field "blue" DE.int)
+        (field "alpha" DE.float)
 
 
 stringToColorDecoder : String -> Decoder Color
-stringToColorDecoder hex =
-    case hexToColor hex of
-        Just color ->
-            succeed color
+stringToColorDecoder stringifiedColor =
+    case (decodeString rgbaDecoder stringifiedColor) of
+        Ok color ->
+            succeed <| rgba color.red color.green color.blue color.alpha
 
-        Nothing ->
-            fail ("Cannot decode color " ++ hex)
+        Err _ ->
+            -- transparent line
+            succeed <| rgba 0 0 0 0
 
 
 colorDecoder : Decoder Color
 colorDecoder =
-    Json.Decode.string |> andThen stringToColorDecoder
+    DE.string |> andThen stringToColorDecoder
